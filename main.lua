@@ -116,7 +116,9 @@ function love.load()
   
 end
 
-
+function drawLeftCard(card)
+  love.graphics.draw(card, 800, 340, 0, 0.27, 0.27)
+end
 function love.draw()
   local bgPath= "assets/img/logo.png"
   bg = love.graphics.newImage(bgPath)
@@ -126,7 +128,7 @@ function love.draw()
   if centralCardIndex >= 1 and centralCardIndex <= #cardImages then
     love.graphics.draw(cardImages[centralCardIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
   elseif centralCardIndex == 0 or centralCardIndex == nil then
-    centralCardIndex = "26"
+    centralCardIndex = 26
     love.graphics.draw(cardImages[centralCardIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
   else
     centralCardIndex = 17
@@ -146,9 +148,10 @@ function love.draw()
    for i, card in ipairs(resteCartes) do
       love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
    end
-
-  
- 
+-- carte preécedente opponent
+   love.graphics.draw(cardImages[34], 880 , 20, 0, 0.27, 0.27)
+-- carte précédente player
+   love.graphics.draw(cardImages[3], 880, cartePY - 20, 0, 0.27, 0.27)
  
 end
 
@@ -156,15 +159,34 @@ function love.update(dt)
   function love.mousepressed(x, y, button, istouch)
     if button == 1 then
         -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
-        if 
-           y >= 250 and y <=  250 + resteCartes[1]:getHeight() * 0.18 then
-            -- Ajouter une carte aléatoire à playerHand
-            local randomIndex = math.random(1, #cardImages)
-            table.insert(playerHand, cardImages[randomIndex])
+        if x >= 5 and x <= 180 and
+         y >= 250 and y <= 480 then
+          -- Ajouter une carte aléatoire à playerHand
+          local randomIndex = math.random(1, #cardImages)
+          table.insert(playerHand, cardImages[randomIndex])
+          
+        end
+
+        for i, card in ipairs(playerHand) do
+            if x >= cartePX + (i-1) * cardSpacing and x <= cartePX + (i-1) * cardSpacing + card:getWidth() * 0.27 and
+            y >= cartePY and y <= cartePY + card:getHeight() * 0.27 then
+                centralCardIndex = i
+                table.remove(playerHand, i)
+                
+                break
+            end
         end
         
     end
   end
+    function love.mousemoved(x, y, dx, dy, istouch)
+      if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
+        love.mouse.setCursor(love.mouse.getSystemCursor("hand"))
+      else
+        love.mouse.setCursor()
+      end
+    
+    end
 end
 
 
