@@ -88,13 +88,19 @@ end
 
 
 
+function drawCentralCard()
+  math.random()
+  math.random(); math.random(); math.random()
+  local randomIndex = math.random(1, #cardImages)
+  love.graphics.draw(cardImages[randomIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
+end
 
 
 function love.load()
-  
-  love.window.setMode(1050,680, {resizable=true, vsync=false, minwidth=400, minheight=300})
+  love.window.setMode(1050,680, {resizable=false, vsync=false, minwidth=400, minheight=300})
   love.window.setTitle("Lucarno - Les 8 Américains")
   love.graphics.setBackgroundColor(255,255,255)
+  centralCardIndex = love.math.random(1, #cardImages)
 
   playerHand = distribuerCartes(cardImages)
   opponentHand = {}
@@ -115,10 +121,18 @@ function love.draw()
   local bgPath= "assets/img/logo.png"
   bg = love.graphics.newImage(bgPath)
   love.graphics.draw(bg, 165, -48)
-
-  local randomIndex = math.random(1, 32)
-  love.graphics.draw(cardImages[randomIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
-
+  
+ 
+  if centralCardIndex >= 1 and centralCardIndex <= #cardImages then
+    love.graphics.draw(cardImages[centralCardIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
+  elseif centralCardIndex == 0 or centralCardIndex == nil then
+    centralCardIndex = "26"
+    love.graphics.draw(cardImages[centralCardIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
+  else
+    centralCardIndex = 17
+    love.graphics.draw(cardImages[centralCardIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
+  end
+  
   for i, card in ipairs(opponentHand) do
     love.graphics.draw(card, 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
   end
@@ -130,12 +144,27 @@ function love.draw()
  
  
    for i, card in ipairs(resteCartes) do
-    love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
+      love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
    end
 
   
  
  
+end
+
+function love.update(dt)
+  function love.mousepressed(x, y, button, istouch)
+    if button == 1 then
+        -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
+        if 
+           y >= 250 and y <=  250 + resteCartes[1]:getHeight() * 0.18 then
+            -- Ajouter une carte aléatoire à playerHand
+            local randomIndex = math.random(1, #cardImages)
+            table.insert(playerHand, cardImages[randomIndex])
+        end
+        
+    end
+  end
 end
 
 
