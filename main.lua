@@ -38,8 +38,7 @@ local cardHeight = 0.30
 local cardSpacing = 40
 local cardCenterX = 490
 local cardCenterY = 240
-local cartePY = 470
-local cartePX = 340
+
 
 local offsetX = 0 -- screen to world offset
 local offsetY = 0
@@ -123,6 +122,9 @@ function love.draw()
   local bgPath= "assets/img/logo.png"
   bg = love.graphics.newImage(bgPath)
   love.graphics.draw(bg, 165, -48)
+
+  
+
   
  
   if centralCardIndex >= 1 and centralCardIndex <= #cardImages then
@@ -167,14 +169,19 @@ function love.update(dt)
           
         end
 
+  -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
+        local cardLarg = 40 -- Largeur 
         for i, card in ipairs(playerHand) do
-            if x >= cartePX + (i-1) * cardSpacing and x <= cartePX + (i-1) * cardSpacing + card:getWidth() * 0.27 and
-            y >= cartePY and y <= cartePY + card:getHeight() * 0.27 then
-                centralCardIndex = i
-                table.remove(playerHand, i)
-                
-                break
-            end
+          local cardLeft = 340 + (i-1) * cardSpacing
+          local cardRight = cardLeft + cardLarg
+          local cardTop = cartePY
+          local cardBottom = cardTop + card:getHeight() * 0.27
+          
+          if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
+            centralCardIndex = i
+            table.remove(playerHand, i)
+            break
+          end
         end
         
     end
@@ -188,10 +195,3 @@ function love.update(dt)
     
     end
 end
-
-
- 
-  
-
- 
- 
