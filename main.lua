@@ -170,19 +170,23 @@ function love.update(dt)
         end
 
   -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
-        local cardLarg = 40 -- Largeur 
-        for i, card in ipairs(playerHand) do
-          local cardLeft = 340 + (i-1) * cardSpacing
-          local cardRight = cardLeft + cardLarg
-          local cardTop = cartePY
-          local cardBottom = cardTop + card:getHeight() * 0.27
-          
-          if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
-            centralCardIndex = i
-            table.remove(playerHand, i)
-            break
-          end
-        end
+  local cardLarg = 40 -- Largeur 
+  for i, card in ipairs(playerHand) do
+    local cardLeft = 340 + (i-1) * cardSpacing
+    local cardRight = cardLeft + cardLarg
+    local cardTop = cartePY
+    local cardBottom = cardTop + card:getHeight() * 0.27
+    
+    if i == #playerHand then
+      cardRight = cardLeft + card:getWidth() * 0.27
+    end
+    
+    if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
+      centralCardIndex = i
+      table.remove(playerHand, i)
+      break
+    end
+  end
         
     end
   end
