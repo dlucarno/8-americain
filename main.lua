@@ -267,9 +267,7 @@ function love.load()
   
 end
 
-function drawLeftCard(card)
-  love.graphics.draw(card.image, 800, 340, 0, 0.27, 0.27)
-end
+
 
 function love.draw()
   local bgPath= "assets/img/logo.png"
@@ -291,8 +289,7 @@ function love.draw()
    for i, card in ipairs(resteCartes) do
       love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
    end
--- carte précédente de l'adversaire
-   love.graphics.draw(cardYes[1].image, 880 , 20, 0, 0.27, 0.27)
+
 -- carte précédente du joueur
   if previousCentralCard then
      love.graphics.draw(centralCard.image, 880, cartePY - 20, 0, 0.27, 0.27)
