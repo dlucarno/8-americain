@@ -186,6 +186,7 @@ function love.load()
   playerHasPlayed = false
   canPlay = true
   cardAdd = false
+  errorSound = love.audio.newSource("assets/sounds/error.wav", "static")
   cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
   cardAddSound = love.audio.newSource("assets/sounds/draw.wav", "static")
   backCardImage = love.graphics.newImage("assets/img/cards-master/back.jpg")
@@ -295,6 +296,8 @@ function love.mousepressed(x, y, button, istouch)
         break
       end
     end
+  else
+    love.audio.play(errorSound)
   end
 end
 
