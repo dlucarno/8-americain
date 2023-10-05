@@ -97,7 +97,7 @@ function jouerOrdinateur()
   -- L'ordinateur joue cette carte
   centralCard = card
   centralCardIndex = table.indexOf(imagePaths.cards, cardName)
-  
+  love.audio.play(cardPlayedSound)
   -- Supprimer la carte de la main de l'ordinateur
   table.remove(opponentHand, randomIndex)
 end
@@ -184,7 +184,7 @@ function love.load()
   centralCardIndex = love.math.random(1, #cardYes)
   centralCard = cardImages[centralCardIndex]
   playerHasPlayed = false
-
+  cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
   playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
 
   opponentHand = {}
@@ -275,6 +275,7 @@ function love.mousepressed(x, y, button, istouch)
           table.remove(playerHand, i)
           -- Afficher la carte au centre
           centralCardIndex = i
+          love.audio.play(cardPlayedSound)
           playerHasPlayed = true
           elapsed_time = 0
           break
