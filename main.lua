@@ -38,24 +38,26 @@ local mousePosY = 0
 local playerTurn = true
 local startMoveX = 0
 local startMoveY = 0
-
+local skipTurn = false
+local drawTwo = false
+local reverseOrder = false
 local cardImages = {}
 
 local centralCard = nil
 local previousCentralCard = nil
 
 for i, cardName in ipairs(imagePaths.cards) do
-  cardImages[i] = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")
+  cardImages[i] = {name = cardName, image = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")}
 end
 
 local cardYes = {}
 
 for i, cardName in ipairs(imagePaths.cards) do
-  cardYes[i] = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")
+  cardYes[i] = {name = cardName, image = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")}
 end
 
 local function drawCard(card, x, y)
-  love.graphics.draw(card, x, y, 0, cardWidth, cardHeight)
+  love.graphics.draw(card.image, x, y, 0, cardWidth, cardHeight)
 end
 
 function playAgain()
@@ -89,6 +91,13 @@ function table.indexOf(t, object)
   return nil
 end
 
+function getCardIndexInGeneralList(card)
+  local cardName = card.name -- Obtenez le nom de la carte
+  -- Obtenez l'index de la carte dans la liste générale
+  local cardIndexInGeneralList = table.indexOf(imagePaths.cards, cardName)
+  return cardIndexInGeneralList
+end
+
 function jouerOrdinateur()
   -- Sélectionner une carte aléatoire dans la main de l'ordinateur
   local randomIndex = math.random(1, #opponentHand)
@@ -96,7 +105,7 @@ function jouerOrdinateur()
 
   -- L'ordinateur joue cette carte
   centralCard = card
-  centralCardIndex = table.indexOf(imagePaths.cards, cardName)
+  centralCardIndex = table.indexOf(imagePaths.cards, card.name)
   love.audio.play(cardPlayedSound)
   -- Supprimer la carte de la main de l'ordinateur
   table.remove(opponentHand, randomIndex)
@@ -174,8 +183,25 @@ function drawCentralCard()
   math.random()
   math.random(); math.random(); math.random()
   local randomIndex = math.random(1, #cardImages)
-  love.graphics.draw(cardImages[randomIndex], cardCenterX, cardCenterY, 0, 0.27, 0.27)
+  love.graphics.draw(cardImages[randomIndex].image, cardCenterX, cardCenterY, 0, 0.27, 0.27)
 end
+
+
+function jouerCarte(cardIndex)
+  local cardName = imagePaths.cards[cardIndex]
+  local cardValue = getValueFromCardName(cardName)
+  local cardColor = getColorFromCardName(cardName)
+  local centralCardName = imagePaths.cards[centralCardIndex]
+  local centralCardValue = getValueFromCardName(centralCardName)
+  local centralCardColor = getColorFromCardName(centralCardName)
+
+  if cardValue == centralCardValue or cardColor == centralCardColor then
+    return true
+  else
+    return false
+  end
+end
+
 
 function love.load()
   love.window.setMode(1050,680, {resizable=false, vsync=false, minwidth=400, minheight=300})
@@ -197,8 +223,8 @@ function love.load()
   for i, card in ipairs(playerHand) do
     local x = cartePX + (i-1) * cardSpacing
     local y = cartePY
-    love.graphics.draw(card, x, y, 0, 0.27, 0.27)
-    cardCoords[i] = {x = x, y = y, width = card:getWidth() * 0.27, height = card:getHeight() * 0.27}
+    love.graphics.draw(card.image, x, y, 0, 0.27, 0.27)
+    cardCoords[i] = {x = x, y = y, width = card.image:getWidth() * 0.27, height = card.image:getHeight() * 0.27}
   end
 
   
@@ -217,7 +243,7 @@ function love.load()
 end
 
 function drawLeftCard(card)
-  love.graphics.draw(card, 800, 340, 0, 0.27, 0.27)
+  love.graphics.draw(card.image, 800, 340, 0, 0.27, 0.27)
 end
 
 function love.draw()
@@ -226,7 +252,7 @@ function love.draw()
   love.graphics.draw(bg, 165, -48)
    
   if centralCard then
-    love.graphics.draw(centralCard, cardCenterX, cardCenterY, 0, 0.27, 0.27)
+    love.graphics.draw(centralCard.image, cardCenterX, cardCenterY, 0, 0.27, 0.27)
   end
   
   for i = 1, #opponentHand do
@@ -234,17 +260,17 @@ function love.draw()
   end
 
    for i, card in ipairs(playerHand) do
-     love.graphics.draw(card, cartePX + (i-1) * cardSpacing, cartePY, 0, 0.27, 0.27)
+     love.graphics.draw(card.image, cartePX + (i-1) * cardSpacing, cartePY, 0, 0.27, 0.27)
     end
  
    for i, card in ipairs(resteCartes) do
       love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
    end
 -- carte précédente de l'adversaire
-   love.graphics.draw(cardYes[1], 880 , 20, 0, 0.27, 0.27)
+   love.graphics.draw(cardYes[1].image, 880 , 20, 0, 0.27, 0.27)
 -- carte précédente du joueur
   if previousCentralCard then
-     love.graphics.draw(centralCard, 880, cartePY - 20, 0, 0.27, 0.27)
+     love.graphics.draw(centralCard.image, 880, cartePY - 20, 0, 0.27, 0.27)
    end
  
 end
@@ -278,12 +304,15 @@ function love.mousepressed(x, y, button, istouch)
       local cardLeft = 340 + (i-1) * cardSpacing
       local cardRight = cardLeft + cardLarg
       local cardTop = cartePY
-      local cardBottom = cardTop + card:getHeight() * 0.27
+      local cardBottom = cardTop + card.image:getHeight() * 0.27
       if i == #playerHand then
-        cardRight = cardLeft + card:getWidth() * 0.27
+        cardRight = cardLeft + card.image:getWidth() * 0.27
       end
 
       if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
+        local selectedCard = playerHand[i] -- Obtenez la carte sélectionnée de la main du joueur
+        local cardIndexInGeneralList = getCardIndexInGeneralList(selectedCard)
+        print("Carte sélectionnée : " .. imagePaths.cards[cardIndexInGeneralList])
         -- Mettre à jour la carte centrale
         centralCard = playerHand[i]
         -- Supprimer la carte de la main du joueur
