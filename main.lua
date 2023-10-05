@@ -21,7 +21,7 @@ local imagePaths = {
   },
   back = "assets/img/cards-master/back.jpg"
 }
-
+local showRules = false
 local cartePX = 340
 local cartePY = 480
 local cardWidth = 0.30
@@ -42,7 +42,7 @@ local skipTurn = false
 local drawTwo = false
 local reverseOrder = false
 local cardImages = {}
-
+local hasPlayerPlayedFirstCard = false
 local centralCard = nil
 local previousCentralCard = nil
 
@@ -298,6 +298,74 @@ function love.draw()
      love.graphics.draw(centralCard.image, 880, cartePY - 20, 0, 0.27, 0.27)
    end
  
+  -- Bouton pour afficher les règles du jeu
+  if love.mouse.getX() > 0 and love.mouse.getX() < 100 and love.mouse.getY() > 0 and love.mouse.getY() < 30 then
+    love.graphics.setColor(1, 0, 0)
+  else
+    love.graphics.setColor(1, 1, 1)
+  end
+  local text = "Règle du jeu"
+  local font = love.graphics.getFont()
+  local textWidth = font:getWidth(text) * 1.7
+  love.graphics.rectangle("fill", 0, 0, textWidth, 30)
+  love.graphics.setColor(0, 0, 0)
+  love.graphics.print("Règle du jeu", 10, 10, 0, 1.5)
+  love.graphics.setColor(1, 1, 1)
+  -- Bouton pour redistribuer
+  if love.mouse.getX() > 0 and love.mouse.getX() < 100 and love.mouse.getY() > 40 and love.mouse.getY() < 70 then
+    love.graphics.setColor(1, 0, 0)
+  else
+    love.graphics.setColor(1, 1, 1)
+  end
+  local text = "Redistribuer"
+  local font = love.graphics.getFont()
+  local textWidth = font:getWidth(text) * 1.7
+  love.graphics.rectangle("fill", 0, 40, textWidth, 30)
+  love.graphics.setColor(0, 0, 0)
+  love.graphics.print("Redistribuer", 10, 50, 0, 1.5)
+  love.graphics.setColor(1, 1, 1)
+  -- Bouton pour quitter
+  if love.mouse.getX() > 0 and love.mouse.getX() < 100 and love.mouse.getY() > 80 and love.mouse.getY() < 110 then
+    love.graphics.setColor(1, 0, 0)
+  else
+    love.graphics.setColor(1, 1, 1)
+  end
+  local text = "Quitter"
+  local font = love.graphics.getFont()
+  local textWidth = font:getWidth(text) * 1.7
+  love.graphics.rectangle("fill", 0, 80, textWidth, 30)
+  love.graphics.setColor(0, 0, 0)
+  love.graphics.print("Quitter", 10, 90, 0, 1.5)
+  love.graphics.setColor(1, 1, 1)
+  if showRules then
+    -- Dessinez le fond de la fenêtre contextuelle
+    love.graphics.setColor(0, 0, 0, 0.5) -- semi-transparent
+    love.graphics.rectangle('fill', 100, 100, 680, 480)
+    
+    -- Dessinez le texte des règles
+    love.graphics.setColor(1, 1, 1) -- blanc
+    local rules = [[
+    Règles du jeu "8 américain" :
+    1. Le jeu se joue avec un jeu de 52 cartes.
+    2. Chaque joueur commence avec 7 cartes.
+    3. Le but du jeu est de se débarrasser de toutes ses cartes.
+    4. Les cartes spéciales sont :
+       - 8 : Le joueur suivant saute son tour.
+       - 2 : Le joueur suivant doit piocher 2 cartes.
+       - Valet : Le joueur qui joue cette carte change la couleur de la pile de défausse.
+       - As : Le sens du jeu est inversé.
+    5. Si un joueur ne peut pas jouer une carte, il doit piocher une carte de la pioche.
+    6. Le premier joueur qui se débarrasse de toutes ses cartes est le gagnant.
+    ]]
+    love.graphics.setFont(love.graphics.newFont(14))
+    love.graphics.printf(rules, 120, 180, 580)
+    love.graphics.setFont(font)
+    
+    -- Dessinez le bouton de fermeture
+    love.graphics.rectangle('line', 650, 110, 50, 20)
+    love.graphics.printf('Fermer', 655, 110, 40, 'center')
+  end
+
 end
 
 function love.update(dt)
@@ -312,6 +380,11 @@ function love.update(dt)
   
 end
 function love.mousepressed(x, y, button, istouch)
+  -- Vérifier si le clic a eu lieu sur le bouton "Règle du jeu"
+  if x >= 0 and x <= 100 and y >= 0 and y <= 30 then
+    showRules = not showRules -- bascule l'affichage des règles
+  end
+
   if button == 1 and playerTurn then
     -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
     if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
@@ -348,6 +421,7 @@ function love.mousepressed(x, y, button, istouch)
           love.audio.play(cardPlayedSound)
           playerTurn = false -- C'est maintenant le tour de l'ordinateur
           elapsed_time = 0
+          hasPlayerPlayedFirstCard = true
           break
         else
           love.audio.play(errorSound)
@@ -357,6 +431,19 @@ function love.mousepressed(x, y, button, istouch)
     end
   else
     love.audio.play(errorSound)
+  end
+  if showRules and x >= 650 and x <= 690 and y >= 110 and y <= 130 then
+    showRules = false
+  end
+  if x >= 0 and x <= 100 and y >= 40 and y <= 70 then
+    if not hasPlayerPlayedFirstCard then
+      playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes
+    else
+     love.audio.play(errorSound)
+    end
+  end
+  if x >= 0 and x <= 100 and y >= 80 and y <= 110 then
+    love.event.quit()
   end
 end
 

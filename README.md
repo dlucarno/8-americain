@@ -18,5 +18,3 @@ Le projet consiste en la création d'un jeu de cartes des 8 Américains en utili
 ![Capture d'écran 1](screenshot1.png)
 *Description de la capture d'écran ici.*
 
-![Capture d'écran 2](screenshot2.png)
-*Description de la capture d'écran ici.*
