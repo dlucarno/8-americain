@@ -313,16 +313,21 @@ function love.mousepressed(x, y, button, istouch)
         local selectedCard = playerHand[i] -- Obtenez la carte sélectionnée de la main du joueur
         local cardIndexInGeneralList = getCardIndexInGeneralList(selectedCard)
         print("Carte sélectionnée : " .. imagePaths.cards[cardIndexInGeneralList])
-        -- Mettre à jour la carte centrale
-        centralCard = playerHand[i]
-        -- Supprimer la carte de la main du joueur
-        table.remove(playerHand, i)
-        -- Afficher la carte au centre
-        centralCardIndex = i
-        love.audio.play(cardPlayedSound)
-        playerTurn = false -- C'est maintenant le tour de l'ordinateur
-        elapsed_time = 0
-        break
+        if jouerCarte(i) then
+          -- Mettre à jour la carte centrale
+          centralCard = playerHand[i]
+          -- Supprimer la carte de la main du joueur
+          table.remove(playerHand, i)
+          -- Afficher la carte au centre
+          centralCardIndex = i
+          love.audio.play(cardPlayedSound)
+          playerTurn = false -- C'est maintenant le tour de l'ordinateur
+          elapsed_time = 0
+          break
+        else
+          love.audio.play(errorSound)
+        end
+        
       end
     end
   else
