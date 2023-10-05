@@ -184,7 +184,6 @@ function love.load()
   centralCardIndex = love.math.random(1, #cardYes)
   centralCard = cardImages[centralCardIndex]
   playerHasPlayed = false
-  tourJoueur = true
   canPlay = true
   cardAdd = false
   cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
@@ -201,7 +200,7 @@ function love.load()
     cardCoords[i] = {x = x, y = y, width = card:getWidth() * 0.27, height = card:getHeight() * 0.27}
   end
 
-
+  
   opponentHand = {}
   for i = 1, 8 do
     local randomIndex = math.random(1, #cardImages)
@@ -277,22 +276,30 @@ function love.mousepressed(x, y, button, istouch)
       
     end
 
-  
-    for i, coords in ipairs(cardCoords) do
-      if x >= coords.x and x <= coords.x + coords.width and y >= coords.y and y <= coords.y + coords.height then
-        if canPlay and tourJoueur then 
+    -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
+    local cardLarg = 40 -- Largeur 
+    for i, card in ipairs(playerHand) do
+      local cardLeft = 340 + (i-1) * cardSpacing
+      local cardRight = cardLeft + cardLarg
+      local cardTop = cartePY
+      local cardBottom = cardTop + card:getHeight() * 0.27
+      if i == #playerHand then
+        cardRight = cardLeft + card:getWidth() * 0.27
+      end
+
+      if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
+        if canPlay then 
           previousCentralCard = centralCard
-          -- Mettre à jour la carte centrale
-          centralCard = playerHand[i]
-          -- Supprimer la carte de la main du joueur
-          table.remove(playerHand, i)
-          -- Afficher la carte au centre
-          centralCardIndex = i
-          love.audio.play(cardPlayedSound)
-          playerHasPlayed = true
-          elapsed_time = 0
-          
-          break
+            -- Mettre à jour la carte centrale
+            centralCard = playerHand[i]
+            -- Supprimer la carte de la main du joueur
+            table.remove(playerHand, i)
+            -- Afficher la carte au centre
+            centralCardIndex = i
+            love.audio.play(cardPlayedSound)
+            playerHasPlayed = true
+            elapsed_time = 0
+            break
         end 
       end
     end
