@@ -184,10 +184,23 @@ function love.load()
   centralCardIndex = love.math.random(1, #cardYes)
   centralCard = cardImages[centralCardIndex]
   playerHasPlayed = false
+  tourJoueur = true
+  canPlay = true
   cardAdd = false
   cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
   cardAddSound = love.audio.newSource("assets/sounds/draw.wav", "static")
+  backCardImage = love.graphics.newImage("assets/img/cards-master/back.jpg")
   playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
+
+
+  cardCoords = {}
+  for i, card in ipairs(playerHand) do
+    local x = cartePX + (i-1) * cardSpacing
+    local y = cartePY
+    love.graphics.draw(card, x, y, 0, 0.27, 0.27)
+    cardCoords[i] = {x = x, y = y, width = card:getWidth() * 0.27, height = card:getHeight() * 0.27}
+  end
+
 
   opponentHand = {}
   for i = 1, 8 do
@@ -217,7 +230,7 @@ function love.draw()
   end
   
   for i = 1, #opponentHand do
-    love.graphics.draw(love.graphics.newImage("assets/img/cards-master/back.jpg"), 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
+    love.graphics.draw(backCardImage, 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
   end
 
    for i, card in ipairs(playerHand) do
@@ -243,9 +256,10 @@ function love.update(dt)
   -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
   if (playerHasPlayed  or cardAdd) and elapsed_time >= 4 then
     jouerOrdinateur()
-    elapsed_time = 0
     playerHasPlayed = false
     cardAdd = false
+    canPlay = true
+    elapsed_time = 0 
   end
   
 end
@@ -259,22 +273,15 @@ function love.mousepressed(x, y, button, istouch)
       love.audio.play(cardAddSound)
       cardAdd = true  
       elapsed_time = 0
+      canPlay = false
+      
     end
 
-    -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
-    local cardLarg = 40 -- Largeur 
-    for i, card in ipairs(playerHand) do
-      local cardLeft = 340 + (i-1) * cardSpacing
-      local cardRight = cardLeft + cardLarg
-      local cardTop = cartePY
-      local cardBottom = cardTop + card:getHeight() * 0.27
-      if i == #playerHand then
-        cardRight = cardLeft + card:getWidth() * 0.27
-      end
-
-      if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
-       
-        previousCentralCard = centralCard
+  
+    for i, coords in ipairs(cardCoords) do
+      if x >= coords.x and x <= coords.x + coords.width and y >= coords.y and y <= coords.y + coords.height then
+        if canPlay and tourJoueur then 
+          previousCentralCard = centralCard
           -- Mettre à jour la carte centrale
           centralCard = playerHand[i]
           -- Supprimer la carte de la main du joueur
@@ -284,8 +291,9 @@ function love.mousepressed(x, y, button, istouch)
           love.audio.play(cardPlayedSound)
           playerHasPlayed = true
           elapsed_time = 0
+          
           break
-         
+        end 
       end
     end
   end
