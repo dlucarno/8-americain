@@ -184,7 +184,9 @@ function love.load()
   centralCardIndex = love.math.random(1, #cardYes)
   centralCard = cardImages[centralCardIndex]
   playerHasPlayed = false
+  cardAdd = false
   cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
+  cardAddSound = love.audio.newSource("assets/sounds/draw.wav", "static")
   playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
 
   opponentHand = {}
@@ -239,10 +241,11 @@ function love.update(dt)
   elapsed_time = elapsed_time + dt
 
   -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
-  if playerHasPlayed and elapsed_time >= 4 then
+  if (playerHasPlayed  or cardAdd) and elapsed_time >= 4 then
     jouerOrdinateur()
     elapsed_time = 0
     playerHasPlayed = false
+    cardAdd = false
   end
   
 end
@@ -253,6 +256,9 @@ function love.mousepressed(x, y, button, istouch)
       -- Ajouter une carte aléatoire à playerHand
       local randomIndex = math.random(1, #cardImages)
       table.insert(playerHand, cardImages[randomIndex])
+      love.audio.play(cardAddSound)
+      cardAdd = true  
+      elapsed_time = 0
     end
 
     -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
