@@ -35,7 +35,7 @@ local offsetY = 0
 local elapsed_time = 0
 local mousePosX = 0
 local mousePosY = 0
-
+local playerTurn = true
 local startMoveX = 0
 local startMoveY = 0
 
@@ -250,30 +250,25 @@ end
 
 function love.update(dt)
   elapsed_time = elapsed_time + dt
-  elapsed_time = elapsed_time + dt
 
   -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
-  if (playerHasPlayed  or cardAdd) and elapsed_time >= 4 then
+  if not playerTurn and elapsed_time >= 2 then
     jouerOrdinateur()
-    playerHasPlayed = false
-    cardAdd = false
-    canPlay = true
+    playerTurn = true -- C'est maintenant le tour du joueur
     elapsed_time = 0 
   end
   
 end
 function love.mousepressed(x, y, button, istouch)
-  if button == 1 and tourJoueur then
+  if button == 1 and playerTurn then
     -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
     if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
       -- Ajouter une carte aléatoire à playerHand
       local randomIndex = math.random(1, #cardImages)
       table.insert(playerHand, cardImages[randomIndex])
       love.audio.play(cardAddSound)
-      cardAdd = true  
+      playerTurn = false -- C'est maintenant le tour de l'ordinateur
       elapsed_time = 0
-      canPlay = false
-      
     end
 
     -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
@@ -288,19 +283,16 @@ function love.mousepressed(x, y, button, istouch)
       end
 
       if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
-        if canPlay then 
-          previousCentralCard = centralCard
-            -- Mettre à jour la carte centrale
-            centralCard = playerHand[i]
-            -- Supprimer la carte de la main du joueur
-            table.remove(playerHand, i)
-            -- Afficher la carte au centre
-            centralCardIndex = i
-            love.audio.play(cardPlayedSound)
-            playerHasPlayed = true
-            elapsed_time = 0
-            break
-        end 
+        -- Mettre à jour la carte centrale
+        centralCard = playerHand[i]
+        -- Supprimer la carte de la main du joueur
+        table.remove(playerHand, i)
+        -- Afficher la carte au centre
+        centralCardIndex = i
+        love.audio.play(cardPlayedSound)
+        playerTurn = false -- C'est maintenant le tour de l'ordinateur
+        elapsed_time = 0
+        break
       end
     end
   end
