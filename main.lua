@@ -99,16 +99,26 @@ function getCardIndexInGeneralList(card)
 end
 
 function jouerOrdinateur()
-  -- Sélectionner une carte aléatoire dans la main de l'ordinateur
-  local randomIndex = math.random(1, #opponentHand)
-  local card = opponentHand[randomIndex]
-
-  -- L'ordinateur joue cette carte
-  centralCard = card
-  centralCardIndex = table.indexOf(imagePaths.cards, card.name)
-  love.audio.play(cardPlayedSound)
-  -- Supprimer la carte de la main de l'ordinateur
-  table.remove(opponentHand, randomIndex)
+  -- Parcourir la main de l'ordinateur pour trouver une carte jouable
+  for i, card in ipairs(opponentHand) do
+    local cardIndexInGeneralList = getCardIndexInGeneralList(card)
+    print("Carte Ordinateur : " .. imagePaths.cards[cardIndexInGeneralList])
+    if jouerCarte(cardIndexInGeneralList) then
+      -- L'ordinateur joue cette carte
+      centralCard = card
+      centralCardIndex = table.indexOf(imagePaths.cards, card.name)
+      love.audio.play(cardPlayedSound)
+      -- Supprimer la carte de la main de l'ordinateur
+      table.remove(opponentHand, i)
+      return
+    end
+  end
+  -- Si aucune carte jouable n'a été trouvée, l'ordinateur pioche une carte
+  local randomIndex = math.random(1, #cardImages)
+  local card = cardImages[randomIndex]
+  -- Ajouter la carte à la main de l'ordinateur
+  table.insert(opponentHand, card)
+  love.audio.play(cardAddSound)
 end
 
 
@@ -195,7 +205,22 @@ function jouerCarte(cardIndex)
   local centralCardValue = getValueFromCardName(centralCardName)
   local centralCardColor = getColorFromCardName(centralCardName)
 
-  if cardValue == centralCardValue or cardColor == centralCardColor then
+  -- Si la carte est un 8, le joueur suivant saute son tour
+  if cardValue == 8 then
+    skipTurn = true
+    return true
+  -- Si la carte est un 2, le joueur suivant doit piocher 2 cartes
+  elseif cardValue == 2 then
+    drawTwo = true
+    return true
+  -- Si la carte est un valet, le joueur change la couleur de la pile de défausse
+  
+  -- Si la carte est un as, le sens du jeu est inversé
+  elseif cardValue == 1 then
+    reverseOrder = not reverseOrder
+    return true
+  -- Si la carte a la même couleur ou la même valeur que la carte du dessus de la pile de défausse, elle peut être jouée
+  elseif cardColor == centralCardColor or cardValue == centralCardValue then
     return true
   else
     return false
@@ -313,7 +338,7 @@ function love.mousepressed(x, y, button, istouch)
         local selectedCard = playerHand[i] -- Obtenez la carte sélectionnée de la main du joueur
         local cardIndexInGeneralList = getCardIndexInGeneralList(selectedCard)
         print("Carte sélectionnée : " .. imagePaths.cards[cardIndexInGeneralList])
-        if jouerCarte(i) then
+        if jouerCarte(cardIndexInGeneralList) then
           -- Mettre à jour la carte centrale
           centralCard = playerHand[i]
           -- Supprimer la carte de la main du joueur
