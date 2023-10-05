@@ -32,7 +32,7 @@ local cardCenterY = 240
 local tourJoueur = true
 local offsetX = 0
 local offsetY = 0
-
+local elapsed_time = 0
 local mousePosX = 0
 local mousePosY = 0
 
@@ -42,6 +42,7 @@ local startMoveY = 0
 local cardImages = {}
 
 local centralCard = nil
+local previousCentralCard = nil
 
 for i, cardName in ipairs(imagePaths.cards) do
   cardImages[i] = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")
@@ -57,28 +58,48 @@ local function drawCard(card, x, y)
   love.graphics.draw(card, x, y, 0, cardWidth, cardHeight)
 end
 
-function jouerOrdinateur()
-  for i, card in ipairs(opponentHand) do
-    local cardName = imagePaths.cards[i]
-    local cardColor = getColorFromCardName(cardName)
-    local cardValue = getValueFromCardName(cardName)
+function playAgain()
+  -- Donner un autre tour au joueur actuel
+  currentPlayer = currentPlayer - 1
+end
 
-    local centralCardName = imagePaths.cards[centralCardIndex]
-    local centralCardColor = getColorFromCardName(centralCardName)
-    local centralCardValue = getValueFromCardName(centralCardName)
 
-    if cardColor == centralCardColor or cardValue == centralCardValue then
-      -- L'ordinateur joue cette carte
-      centralCard = opponentHand[i]
-      table.remove(opponentHand, i)
-      centralCardIndex = i
-      return
-    end
+function skipTurn()
+  -- Ajouter 1 au nombre de joueurs à sauter
+  skipCount = skipCount + 1
+end
+
+
+function drawCards(n)
+  for i = 1, n do
+    -- Piocher une carte au hasard
+    local randomIndex = math.random(1, #deck)
+    local card = table.remove(deck, randomIndex)
+    -- Ajouter la carte à la main du joueur suivant
+    table.insert(nextPlayer.hand, card)
   end
+end
 
-  -- Si l'ordinateur ne peut pas jouer, il pioche une carte
-  local randomIndex = math.random(1, #cardImages)
-  table.insert(opponentHand, cardImages[randomIndex])
+function table.indexOf(t, object)
+  for i, value in ipairs(t) do
+      if value == object then
+          return i
+      end
+  end
+  return nil
+end
+
+function jouerOrdinateur()
+  -- Sélectionner une carte aléatoire dans la main de l'ordinateur
+  local randomIndex = math.random(1, #opponentHand)
+  local card = opponentHand[randomIndex]
+
+  -- L'ordinateur joue cette carte
+  centralCard = card
+  centralCardIndex = table.indexOf(imagePaths.cards, cardName)
+  
+  -- Supprimer la carte de la main de l'ordinateur
+  table.remove(opponentHand, randomIndex)
 end
 
 
@@ -162,12 +183,14 @@ function love.load()
   love.graphics.setBackgroundColor(255,255,255)
   centralCardIndex = love.math.random(1, #cardYes)
   centralCard = cardImages[centralCardIndex]
+  playerHasPlayed = false
 
   playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
 
   opponentHand = {}
   for i = 1, 8 do
-    opponentHand[i] = love.graphics.newImage("assets/img/cards-master/back.jpg")
+    local randomIndex = math.random(1, #cardImages)
+    opponentHand[i] = cardImages[randomIndex]
   end
  
 
@@ -191,8 +214,8 @@ function love.draw()
     love.graphics.draw(centralCard, cardCenterX, cardCenterY, 0, 0.27, 0.27)
   end
   
-  for i, card in ipairs(opponentHand) do
-    love.graphics.draw(card, 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
+  for i = 1, #opponentHand do
+    love.graphics.draw(love.graphics.newImage("assets/img/cards-master/back.jpg"), 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
   end
 
    for i, card in ipairs(playerHand) do
@@ -205,76 +228,66 @@ function love.draw()
 -- carte précédente de l'adversaire
    love.graphics.draw(cardYes[1], 880 , 20, 0, 0.27, 0.27)
 -- carte précédente du joueur
-  if centralCard then
+  if previousCentralCard then
      love.graphics.draw(centralCard, 880, cartePY - 20, 0, 0.27, 0.27)
    end
  
 end
 
 function love.update(dt)
-  function love.mousepressed(x, y, button, istouch)
-    if button == 1 and tourJoueur then
-      -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
-      if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
-        -- Ajouter une carte aléatoire à playerHand
-        local randomIndex = math.random(1, #cardImages)
-        table.insert(playerHand, cardImages[randomIndex])
+  elapsed_time = elapsed_time + dt
+  elapsed_time = elapsed_time + dt
+
+  -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
+  if playerHasPlayed and elapsed_time >= 4 then
+    jouerOrdinateur()
+    elapsed_time = 0
+    playerHasPlayed = false
+  end
+  
+end
+function love.mousepressed(x, y, button, istouch)
+  if button == 1 and tourJoueur then
+    -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
+    if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
+      -- Ajouter une carte aléatoire à playerHand
+      local randomIndex = math.random(1, #cardImages)
+      table.insert(playerHand, cardImages[randomIndex])
+    end
+
+    -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
+    local cardLarg = 40 -- Largeur 
+    for i, card in ipairs(playerHand) do
+      local cardLeft = 340 + (i-1) * cardSpacing
+      local cardRight = cardLeft + cardLarg
+      local cardTop = cartePY
+      local cardBottom = cardTop + card:getHeight() * 0.27
+      if i == #playerHand then
+        cardRight = cardLeft + card:getWidth() * 0.27
       end
 
-      -- Vérifier si le clic a eu lieu sur une carte de la main du joueur
-      local cardLarg = 40 -- Largeur 
-      for i, card in ipairs(playerHand) do
-        local cardLeft = 340 + (i-1) * cardSpacing
-        local cardRight = cardLeft + cardLarg
-        local cardTop = cartePY
-        local cardBottom = cardTop + card:getHeight() * 0.27
-        if i == #playerHand then
-          cardRight = cardLeft + card:getWidth() * 0.27
-        end
-
-        if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
-          local cardName = imagePaths.cards[i]
-          local cardColor = getColorFromCardName(cardName)
-          local cardValue = getValueFromCardName(cardName)
-
-          local centralCardName = imagePaths.cards[centralCardIndex]
-          local centralCardColor = getColorFromCardName(centralCardName)
-          local centralCardValue = getValueFromCardName(centralCardName)
-
-          -- Vérifier si la carte sélectionnée peut être jouée
-          if cardColor == centralCardColor or cardValue == centralCardValue then
-            -- Gérer les effets spéciaux des cartes
-            if cardValue == 8 then
-             
-            elseif cardValue == 2 then
-             
-            elseif cardValue == "jack" then
-              changeColor() -- Vous devez définir cette fonction
-            elseif cardValue == 7 then
-             
-            end
-
-            -- Mettre à jour la carte centrale
-            centralCard = playerHand[i]
-            -- Supprimer la carte de la main du joueur
-            table.remove(playerHand, i)
-            -- Afficher la carte au centre
-            centralCardIndex = i
-            break
-          else
-            -- Afficher un message d'erreur
-            print("Vous ne pouvez pas jouer cette carte.")
-          end
-        end
+      if x >= cardLeft and x <= cardRight and y >= cardTop and y <= cardBottom then
+       
+        previousCentralCard = centralCard
+          -- Mettre à jour la carte centrale
+          centralCard = playerHand[i]
+          -- Supprimer la carte de la main du joueur
+          table.remove(playerHand, i)
+          -- Afficher la carte au centre
+          centralCardIndex = i
+          playerHasPlayed = true
+          elapsed_time = 0
+          break
+         
       end
     end
   end
-  
-  function love.mousemoved(x, y, dx, dy, istouch)
-    if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
-      love.mouse.setCursor(love.mouse.getSystemCursor("hand"))
-    else
-      love.mouse.setCursor()
-    end
+end
+
+function love.mousemoved(x, y, dx, dy, istouch)
+  if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
+    love.mouse.setCursor(love.mouse.getSystemCursor("hand"))
+  else
+    love.mouse.setCursor()
   end
 end
