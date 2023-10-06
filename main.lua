@@ -14,9 +14,9 @@ local imagePaths = {
     "9_of_clubs", "9_of_diamonds", "9_of_hearts", "9_of_spades",
     "10_of_clubs", "10_of_diamonds", "10_of_hearts", "10_of_spades",
     "ace_of_clubs", "ace_of_diamonds", "ace_of_hearts", "ace_of_spades",
-    "jack_of_clubs2", "jack_of_diamonds2", "jack_of_hearts2", "jack_of_spades2",
-    "king_of_clubs2", "king_of_diamonds2", "king_of_hearts2", "king_of_spades2",
-    "queen_of_clubs2", "queen_of_diamonds2", "queen_of_hearts2", "queen_of_spades2",
+    "jack_of_clubs", "jack_of_diamonds", "jack_of_hearts", "jack_of_spades",
+    "king_of_clubs", "king_of_diamonds", "king_of_hearts", "king_of_spades",
+    "queen_of_clubs", "queen_of_diamonds", "queen_of_hearts", "queen_of_spades",
     "red_joker", "black_joker"
   },
   back = "assets/img/cards-master/back.jpg"
@@ -100,13 +100,14 @@ end
 
 function jouerOrdinateur()
   -- Parcourir la main de l'ordinateur pour trouver une carte jouable
-  for i, card in ipairs(opponentHand) do
-    local cardIndexInGeneralList = getCardIndexInGeneralList(card)
+  for i = #opponentHand, 1, -1 do
+    local selectedCard = opponentHand[i]
+    local cardIndexInGeneralList = getCardIndexInGeneralList(selectedCard)
     print("Carte Ordinateur : " .. imagePaths.cards[cardIndexInGeneralList])
     if jouerCarte(cardIndexInGeneralList) then
       -- L'ordinateur joue cette carte
-      centralCard = card
-      centralCardIndex = table.indexOf(imagePaths.cards, card.name)
+      centralCard = selectedCard
+      centralCardIndex = cardIndexInGeneralList
       love.audio.play(cardPlayedSound)
       -- Supprimer la carte de la main de l'ordinateur
       table.remove(opponentHand, i)
@@ -205,26 +206,12 @@ function jouerCarte(cardIndex)
   local centralCardValue = getValueFromCardName(centralCardName)
   local centralCardColor = getColorFromCardName(centralCardName)
 
-  -- Si la carte est un 8, le joueur suivant saute son tour
-  if cardValue == 8 then
-    skipTurn = true
+  if cardValue == centralCardValue or cardColor == centralCardColor then
     return true
-  -- Si la carte est un 2, le joueur suivant doit piocher 2 cartes
-  elseif cardValue == 2 then
-    drawTwo = true
-    return true
-  -- Si la carte est un valet, le joueur change la couleur de la pile de défausse
-  
-  -- Si la carte est un as, le sens du jeu est inversé
-  elseif cardValue == 1 then
-    reverseOrder = not reverseOrder
-    return true
-  -- Si la carte a la même couleur ou la même valeur que la carte du dessus de la pile de défausse, elle peut être jouée
-  elseif cardColor == centralCardColor or cardValue == centralCardValue then
-    return true
-  else
-    return false
   end
+
+  -- Si la règle ci-dessus n'est pas respectée, la carte ne peut pas être jouée
+  return false
 end
 
 
@@ -237,6 +224,7 @@ function love.load()
   playerHasPlayed = false
   canPlay = true
   cardAdd = false
+  cardDistributionSound = love.audio.newSource("assets/sounds/shuffle.wav", "static")
   errorSound = love.audio.newSource("assets/sounds/error.wav", "static")
   cardPlayedSound = love.audio.newSource("assets/sounds/playcard.wav", "static")
   cardAddSound = love.audio.newSource("assets/sounds/draw.wav", "static")
@@ -254,10 +242,7 @@ function love.load()
 
   
   opponentHand = {}
-  for i = 1, 8 do
-    local randomIndex = math.random(1, #cardImages)
-    opponentHand[i] = cardImages[randomIndex]
-  end
+  opponentHand = distribuerCartes(cardImages, 8)
  
 
   resteCartes = {}
@@ -408,13 +393,14 @@ function love.mousepressed(x, y, button, istouch)
         local selectedCard = playerHand[i] -- Obtenez la carte sélectionnée de la main du joueur
         local cardIndexInGeneralList = getCardIndexInGeneralList(selectedCard)
         print("Carte sélectionnée : " .. imagePaths.cards[cardIndexInGeneralList])
+        print("Carte centrale : " .. imagePaths.cards[centralCardIndex])
         if jouerCarte(cardIndexInGeneralList) then
           -- Mettre à jour la carte centrale
-          centralCard = playerHand[i]
+          centralCard = selectedCard
           -- Supprimer la carte de la main du joueur
           table.remove(playerHand, i)
           -- Afficher la carte au centre
-          centralCardIndex = i
+          centralCardIndex = cardIndexInGeneralList
           love.audio.play(cardPlayedSound)
           playerTurn = false -- C'est maintenant le tour de l'ordinateur
           elapsed_time = 0
@@ -435,6 +421,7 @@ function love.mousepressed(x, y, button, istouch)
   if x >= 0 and x <= 100 and y >= 40 and y <= 70 then
     if not hasPlayerPlayedFirstCard then
       playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes
+      love.audio.play(cardDistributionSound)
     else
      love.audio.play(errorSound)
     end
