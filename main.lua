@@ -230,8 +230,8 @@ function love.load()
   cardAddSound = love.audio.newSource("assets/sounds/draw.wav", "static")
   backCardImage = love.graphics.newImage("assets/img/cards-master/back.jpg")
   playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
-
-
+  victoryFont = love.graphics.newFont(14)
+  gameOver = false
   cardCoords = {}
   for i, card in ipairs(playerHand) do
     local x = cartePX + (i-1) * cardSpacing
@@ -252,7 +252,22 @@ function love.load()
   
 end
 
-
+function drawVictoryPopup(message)
+  -- Dessinez le fond de la fenêtre contextuelle
+  love.graphics.setColor(0, 0, 0, 0.5) -- semi-transparent
+  love.graphics.rectangle('fill', 100, 100, 680, 480)
+  
+  -- Dessinez le texte de victoire
+  love.graphics.setColor(1, 1, 1) -- blanc
+  love.graphics.setFont(victoryFont)
+  love.graphics.printf(message, 120, 180, 580)
+  love.graphics.setFont(victoryFont)
+  
+  -- Dessinez le bouton de fermeture
+  love.graphics.rectangle('line', 650, 110, 50, 20)
+  love.graphics.printf('Fermer', 655, 110, 40, 'center')
+  gameOver = true
+end
 
 function love.draw()
   local bgPath= "assets/img/logo.png"
@@ -264,17 +279,41 @@ function love.draw()
   end
   
   for i = 1, #opponentHand do
+    -- Si l'ordinateur n'a plus qu'une carte, la mettre en surbrillance et jouer un son
+    if #opponentHand == 1 then
+      love.graphics.setColor(1, 1, 0) -- couleur jaune
+     
+    else
+      love.graphics.setColor(1, 1, 1) -- couleur blanche
+    end
     love.graphics.draw(backCardImage, 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
   end
+
+   -- Vérifier si le joueur a gagné
+   if #playerHand == 0 then
+    drawVictoryPopup("Félicitations, vous avez gagné !")
+  end
+
+  -- Vérifier si l'ordinateur a gagné
+  if #opponentHand == 0 then
+    drawVictoryPopup("Désolé, l'ordinateur a gagné !")
+  end
+
 
    -- Dessiner la bulle d'information pour le joueur
    
    love.graphics.setColor(0, 0, 0) -- noir
-   love.graphics.print("Vous: " .. #playerHand, 340, 200 + playerHand[1].image:getHeight() * 0.27 + 50)
+   
     love.graphics.setColor(1, 1, 1) -- blanc
-
-   for i, card in ipairs(playerHand) do
-     love.graphics.draw(card.image, cartePX + (i-1) * cardSpacing, cartePY, 0, 0.27, 0.27)
+    for i, card in ipairs(playerHand) do
+      -- Si le joueur n'a plus qu'une carte, la mettre en surbrillance et jouer un son
+      if #playerHand == 1 then
+        love.graphics.setColor(1, 1, 0) -- couleur jaune
+        
+      else
+        love.graphics.setColor(1, 1, 1) -- couleur blanche
+      end
+      love.graphics.draw(card.image, cartePX + (i-1) * cardSpacing, cartePY, 0, 0.27, 0.27)
     end
 
      -- Dessiner la bulle d'information pour l'adversaire
@@ -372,7 +411,7 @@ function love.update(dt)
   elapsed_time = elapsed_time + dt
 
   -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
-  if not playerTurn and elapsed_time >= 2 then
+  if not playerTurn and elapsed_time >= 2 and not gameOver then
     jouerOrdinateur()
     playerTurn = true -- C'est maintenant le tour du joueur
     elapsed_time = 0 
@@ -384,18 +423,13 @@ function love.mousepressed(x, y, button, istouch)
   if x >= 0 and x <= 100 and y >= 0 and y <= 30 then
     showRules = not showRules -- bascule l'affichage des règles
   end
-  if x >= 0 and x <= 100 and y >= 120 and y <= 150 then
-    -- Réinitialiser toutes les variables du jeu ici
-    -- Par exemple :
-    playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
-    opponentHand = distribuerCartes(cardImages, 8)
-    resteCartes = {}
-    for i = 1, 8 do
-      resteCartes[i] = love.graphics.newImage("assets/img/cards-master/back.jpg")
-    end
-    love.audio.play(cardDistributionSound)
+
+  if gameOver and x >= 650 and x <= 700 and y >= 110 and y <= 130 then
+    gameOver = false
   end
-  if button == 1 and playerTurn then
+
+  
+  if button == 1 and playerTurn and not gameOver then
     -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
     if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
       -- Ajouter une carte aléatoire à playerHand
@@ -457,6 +491,8 @@ function love.mousepressed(x, y, button, istouch)
       -- Redistribuer les cartes
       playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes pour le joueur
       opponentHand, _ = distribuerCartes(cardImages) -- Redistribuer les cartes pour l'ordinateur
+      local randomIndex = math.random(1, #cardImages)
+      centralCard = cardImages[randomIndex]
       love.audio.play(cardDistributionSound)
     else
      love.audio.play(errorSound)
