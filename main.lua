@@ -491,8 +491,9 @@ function love.mousepressed(x, y, button, istouch)
       -- Redistribuer les cartes
       playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes pour le joueur
       opponentHand, _ = distribuerCartes(cardImages) -- Redistribuer les cartes pour l'ordinateur
-      local randomIndex = math.random(1, #cardImages)
-      centralCard = cardImages[randomIndex]
+      -- Générer aléatoirement la carte centrale
+      centralCardIndex = math.random(#cardImages)
+      centralCard = cardImages[centralCardIndex]
       love.audio.play(cardDistributionSound)
     else
      love.audio.play(errorSound)

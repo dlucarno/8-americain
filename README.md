@@ -1,6 +1,5 @@
 # Jeu des 8 Américains
 
-![Screenshot du jeu](screenshot.png)
 
 ## Description du Projet
 
@@ -16,3 +15,4 @@ Le projet consiste en la création d'un jeu de cartes des 8 Américains en utili
 ## Captures d'Écran
 
 ![Capture d'écran 1](screenshot.png)
+![Capture d'écran 2](screenshot2.png)
