@@ -267,10 +267,21 @@ function love.draw()
     love.graphics.draw(backCardImage, 340 + (i-1) * 40 , 20, 0, 0.15, 0.15)
   end
 
+   -- Dessiner la bulle d'information pour le joueur
+   
+   love.graphics.setColor(0, 0, 0) -- noir
+   love.graphics.print("Vous: " .. #playerHand, 340, 200 + playerHand[1].image:getHeight() * 0.27 + 50)
+    love.graphics.setColor(1, 1, 1) -- blanc
+
    for i, card in ipairs(playerHand) do
      love.graphics.draw(card.image, cartePX + (i-1) * cardSpacing, cartePY, 0, 0.27, 0.27)
     end
- 
+
+     -- Dessiner la bulle d'information pour l'adversaire
+  love.graphics.setColor(0, 0, 0) -- noir
+  love.graphics.print("Ordinateur: " .. #opponentHand, 340, 20 + backCardImage:getHeight() * 0.15 + 10)
+  love.graphics.setColor(1, 1, 1) -- blanc
+  
    for i, card in ipairs(resteCartes) do
       love.graphics.draw(card, 5 + (i-1) * 2, 250, 0, 0.18, 0.18)
    end
@@ -280,6 +291,10 @@ function love.draw()
      love.graphics.draw(centralCard.image, 880, cartePY - 20, 0, 0.27, 0.27)
    end
  
+
+ 
+
+   
   -- Bouton pour afficher les règles du jeu
   if love.mouse.getX() > 0 and love.mouse.getX() < 100 and love.mouse.getY() > 0 and love.mouse.getY() < 30 then
     love.graphics.setColor(1, 0, 0)
@@ -319,6 +334,9 @@ function love.draw()
   love.graphics.setColor(0, 0, 0)
   love.graphics.print("Quitter", 10, 90, 0, 1.5)
   love.graphics.setColor(1, 1, 1)
+
+
+
   if showRules then
     -- Dessinez le fond de la fenêtre contextuelle
     love.graphics.setColor(0, 0, 0, 0.5) -- semi-transparent
@@ -366,7 +384,17 @@ function love.mousepressed(x, y, button, istouch)
   if x >= 0 and x <= 100 and y >= 0 and y <= 30 then
     showRules = not showRules -- bascule l'affichage des règles
   end
-
+  if x >= 0 and x <= 100 and y >= 120 and y <= 150 then
+    -- Réinitialiser toutes les variables du jeu ici
+    -- Par exemple :
+    playerHand, indexCartesDistribuees = distribuerCartes(cardImages)
+    opponentHand = distribuerCartes(cardImages, 8)
+    resteCartes = {}
+    for i = 1, 8 do
+      resteCartes[i] = love.graphics.newImage("assets/img/cards-master/back.jpg")
+    end
+    love.audio.play(cardDistributionSound)
+  end
   if button == 1 and playerTurn then
     -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
     if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
@@ -420,7 +448,15 @@ function love.mousepressed(x, y, button, istouch)
   end
   if x >= 0 and x <= 100 and y >= 40 and y <= 70 then
     if not hasPlayerPlayedFirstCard then
-      playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes
+      -- Réinitialiser le deck
+      cardImages = {}
+      for i, cardName in ipairs(imagePaths.cards) do
+        cardImages[i] = {name = cardName, image = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")}
+      end
+
+      -- Redistribuer les cartes
+      playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes pour le joueur
+      opponentHand, _ = distribuerCartes(cardImages) -- Redistribuer les cartes pour l'ordinateur
       love.audio.play(cardDistributionSound)
     else
      love.audio.play(errorSound)
