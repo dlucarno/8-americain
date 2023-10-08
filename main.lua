@@ -21,6 +21,9 @@ local imagePaths = {
   },
   back = "assets/img/cards-master/back.jpg"
 }
+local cardDrawn = false
+local asPlayed = false
+local extraTurns = 0
 local showRules = false
 local cartePX = 340
 local cartePY = 480
@@ -205,13 +208,65 @@ function jouerCarte(cardIndex)
   local centralCardName = imagePaths.cards[centralCardIndex]
   local centralCardValue = getValueFromCardName(centralCardName)
   local centralCardColor = getColorFromCardName(centralCardName)
+ 
+ if asPlayed and not cardDrawn then
+    if cardValue ~= 1 then
+      return false
+    else
+      -- Si un as est joué, le tour continue normalement et on réinitialise asPlayed
+      asPlayed = false
+      return true
+    end
+  end
+
+  -- Si la carte jouée est un as
+  if cardValue == 1 then
+    asPlayed = true
+  end
+
+  -- Réinitialisez cardDrawn à false car une carte a été jouée
+  cardDrawn = false
+
+  
+  if cardName == "red_joker" and (centralCardColor == "hearts" or centralCardColor == "diamonds") then
+    return true
+  elseif cardName == "black_joker" and (centralCardColor == "clubs" or centralCardColor == "spades") then
+    return true
+  elseif (cardColor == "hearts" or cardColor == "diamonds") and centralCardName == "red_joker" then
+    return true
+  elseif (cardColor == "clubs" or cardColor == "spades") and centralCardName == "black_joker" then
+    return true
+  end
 
   if cardValue == centralCardValue or cardColor == centralCardColor then
+    if cardValue == 10 or cardName:match("^jack") or cardValue == 2 then
+      extraTurns = extraTurns + 1
+      elapsed_time = 0
+      if cardValue == 2 then
+        local recipient = playerTurn and "opponent" or "player"
+        ajouterCartes(2, recipient)
+      end
+    end
     return true
   end
 
   -- Si la règle ci-dessus n'est pas respectée, la carte ne peut pas être jouée
   return false
+end
+
+function ajouterCartes(n, recipient)
+  -- Vérifiez qui est le destinataire des cartes
+  local hand = recipient == "player" and playerHand or opponentHand
+
+  for i = 1, n do
+    -- Sélectionner une carte aléatoire
+    local randomIndex = math.random(1, #cardImages)
+    local card = cardImages[randomIndex]
+    -- Ajouter la carte à la main du destinataire
+    table.insert(hand, card)
+    -- Supprimer la carte de la liste des cartes disponibles
+    table.remove(cardImages, randomIndex)
+  end
 end
 
 
@@ -410,10 +465,16 @@ end
 function love.update(dt)
   elapsed_time = elapsed_time + dt
 
+  if (playerTurn or not playerTurn) and extraTurns > 0 then
+    extraTurns = extraTurns - 1
+  end
+
   -- Si plus de 2 secondes se sont écoulées depuis le dernier tour du joueur
-  if not playerTurn and elapsed_time >= 2 and not gameOver then
+  if not playerTurn and elapsed_time >= 2 and not gameOver and extraTurns == 0 then
     jouerOrdinateur()
-    playerTurn = true -- C'est maintenant le tour du joueur
+    if extraTurns == 0 then
+      playerTurn = true
+    end
     elapsed_time = 0 
   end
   
@@ -464,7 +525,9 @@ function love.mousepressed(x, y, button, istouch)
           -- Afficher la carte au centre
           centralCardIndex = cardIndexInGeneralList
           love.audio.play(cardPlayedSound)
-          playerTurn = false -- C'est maintenant le tour de l'ordinateur
+          if extraTurns == 0 then
+            playerTurn = false -- C'est maintenant le tour de l'ordinateur
+          end
           elapsed_time = 0
           hasPlayerPlayedFirstCard = true
           break
