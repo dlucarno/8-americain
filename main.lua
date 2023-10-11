@@ -69,6 +69,27 @@ function playAgain()
 end
 
 
+function resetGame()
+  -- Réinitialiser cardImages
+  cardImages = {}
+  for i, cardName in ipairs(imagePaths.cards) do
+    cardImages[i] = {name = cardName, image = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")}
+  end
+
+  -- Redistribuer les cartes
+  playerHand, _ = distribuerCartes(cardImages)
+  opponentHand, _ = distribuerCartes(cardImages)
+
+  -- Générer aléatoirement la carte centrale
+  centralCardIndex = math.random(#cardImages)
+  centralCard = cardImages[centralCardIndex]
+
+  -- Supprimer la carte centrale de cardImages
+  table.remove(cardImages, centralCardIndex)
+
+  cartePioche = cardImages
+end
+
 function skipTurn()
   -- Ajouter 1 au nombre de joueurs à sauter
   skipCount = skipCount + 1
@@ -122,6 +143,7 @@ function jouerOrdinateur()
   local card = cardImages[randomIndex]
   -- Ajouter la carte à la main de l'ordinateur
   table.insert(opponentHand, card)
+  table.remove(cardImages, randomIndex)
   love.audio.play(cardAddSound)
 end
 
@@ -160,6 +182,10 @@ function distribuerCartes(lesCartes)
       local index = math.random(1, #lesCartes)
       cartesDistribuees[i] = retirerCarte(index)
       indexCartesDistribuees[i] = index
+  end
+
+  for _, index in ipairs(indexCartesDistribuees) do
+    table.remove(cardImages, index)
   end
 
   return cartesDistribuees, indexCartesDistribuees
@@ -304,7 +330,7 @@ function love.load()
   for i = 1, 8 do
     resteCartes[i] = love.graphics.newImage("assets/img/cards-master/back.jpg")
   end
-  
+  resetGame()
 end
 
 function drawVictoryPopup(message)
@@ -494,8 +520,9 @@ function love.mousepressed(x, y, button, istouch)
     -- Vérifier si le clic a eu lieu sur la pile de cartes de dos
     if x >= 5 and x <= 180 and y >= 250 and y <= 480 then
       -- Ajouter une carte aléatoire à playerHand
-      local randomIndex = math.random(1, #cardImages)
-      table.insert(playerHand, cardImages[randomIndex])
+      local randomIndex = math.random(1, #cartePioche)
+      table.insert(playerHand, cartePioche[randomIndex])
+      table.remove(cartePioche, randomIndex)
       love.audio.play(cardAddSound)
       playerTurn = false -- C'est maintenant le tour de l'ordinateur
       elapsed_time = 0
@@ -545,18 +572,7 @@ function love.mousepressed(x, y, button, istouch)
   end
   if x >= 0 and x <= 100 and y >= 40 and y <= 70 then
     if not hasPlayerPlayedFirstCard then
-      -- Réinitialiser le deck
-      cardImages = {}
-      for i, cardName in ipairs(imagePaths.cards) do
-        cardImages[i] = {name = cardName, image = love.graphics.newImage("assets/img/cards-master/" .. cardName .. ".png")}
-      end
-
-      -- Redistribuer les cartes
-      playerHand, indexCartesDistribuees = distribuerCartes(cardImages) -- Redistribuer les cartes pour le joueur
-      opponentHand, _ = distribuerCartes(cardImages) -- Redistribuer les cartes pour l'ordinateur
-      -- Générer aléatoirement la carte centrale
-      centralCardIndex = math.random(#cardImages)
-      centralCard = cardImages[centralCardIndex]
+      resetGame()
       love.audio.play(cardDistributionSound)
     else
      love.audio.play(errorSound)
